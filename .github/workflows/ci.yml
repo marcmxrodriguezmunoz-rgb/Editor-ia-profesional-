@@ -16,8 +16,22 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - run: npx playwright install --with-deps chromium
+      - name: Set up FFmpeg and FFprobe
+        timeout-minutes: 3
+        run: |
+          if command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null; then
+            exit 0
+          fi
+          tools_dir="$RUNNER_TEMP/editor-media-tools"
+          npm install --prefix "$tools_dir" --no-save --no-package-lock --ignore-scripts --no-audit --no-fund \
+            @ffmpeg-installer/linux-x64@4.1.0 @ffprobe-installer/linux-x64@5.2.0
+          chmod +x "$tools_dir/node_modules/@ffmpeg-installer/linux-x64/ffmpeg" \
+            "$tools_dir/node_modules/@ffprobe-installer/linux-x64/ffprobe"
+          printf '%s\n' "$tools_dir/node_modules/@ffmpeg-installer/linux-x64" \
+            "$tools_dir/node_modules/@ffprobe-installer/linux-x64" >> "$GITHUB_PATH"
+      - name: Install Playwright Chromium
+        timeout-minutes: 4
+        run: npx playwright install chromium
       - name: Use Playwright Chromium for local rendering
         run: node -e "require('node:fs').appendFileSync(process.env.GITHUB_ENV, 'CHROME_PATH=' + require('@playwright/test').chromium.executablePath() + '\n')"
       - run: npm run test:e2e
