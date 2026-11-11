@@ -22,6 +22,10 @@ jobs:
           if command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null; then
             exit 0
           fi
+          # The fixture generator needs testsrc2. The app needs the newer scale filter.
+          remotion_ffmpeg="$GITHUB_WORKSPACE/node_modules/@remotion/compositor-linux-x64-gnu/ffmpeg"
+          test -x "$remotion_ffmpeg"
+          printf 'FFMPEG_PATH=%s\n' "$remotion_ffmpeg" >> "$GITHUB_ENV"
           tools_dir="$RUNNER_TEMP/editor-media-tools"
           npm install --prefix "$tools_dir" --no-save --no-package-lock --ignore-scripts --no-audit --no-fund \
             @ffmpeg-installer/linux-x64@4.1.0 @ffprobe-installer/linux-x64@5.2.0
